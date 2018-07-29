@@ -38,7 +38,11 @@ void setup() {
      keypressed = myKeypad.getKey();
      if (keypressed != NO_KEY){
         if(isDigit(keypressed) && defuseCodeLengthCounter < defuseCodeLength){
-          defuseCodeLengthCounter = defuseCodeLengthCounter + 1;
+         asm("mov r0,%0 \n\t"  // copy a to r0
+             "inc r0    \n\t"  // increment   
+             "mov %0,r0 \n\t"  // copy r0 back to a
+             :  "+r" (defuseCodeLengthCounter));
+          //defuseCodeLengthCounter = defuseCodeLengthCounter + 1;
           defuseCode = defuseCode + keypressed;
           Serial.print(keypressed);
         } else if ((keypressed == 'B')&&(defuseCodeLengthCounter > 0)){
