@@ -83,14 +83,25 @@ byte empty[8] = {
 //End LCD-i2c definition
 
 //Begin Game Configuration
-#define OPTIONS_NUMBER 3
-String gameOptions[OPTIONS_NUMBER]={"Defuse Code", "Defuse Wire", "Defuse Extra"};
-byte gameOptionSelected;
-byte gameOption = 0;
+#define MODES_SIZE 3
+byte gameMode = 0;
+bool mode_setted = false;
+String gameModes[MODES_SIZE]={"Defuse Code", "Defuse Wire", "Defuse Extra"};
 //End Game Configuration
 
+//Begin Temporizer definition
+#define TIMER_SIZE 3
+byte timerPosition = 0;
+bool timer_setted = false;
+char hourTen= '_';
+char hourUni= '_';
+char minTen = '_';
+char minUni = '_';
+char secTen = '_';
+char secUni = '_';
+//End Temporizer definition
+
 void setup() {
-  Serial.begin(9600);
   //Initialize LCD
   lcd.begin(16, 2);
   //Initialize lcd special characters
@@ -109,29 +120,27 @@ void setup() {
   lcd.home ();
   lcd.print("GAME MODE");
   //Show First Game Option
-  gameOption = showGameOption(0);
+  gameMode = showGameMode(0);
   
-  bool option_selected = false;
-  while(!option_selected){
+  while(!mode_setted){
     key = myKeypad.getKey();
     while (key == NO_KEY) key = myKeypad.getKey();
   
     switch (key) {
     case 'A':
-      if(gameOption > 0){
-        gameOption = gameOption - 1;
-        gameOption = showGameOption(gameOption);
+      if(gameMode > 0){
+        gameMode = gameMode - 1;
+        gameMode = showGameMode(gameMode);
       };
       break;
     case 'B':
-      if(gameOption < OPTIONS_NUMBER -1){
-        gameOption = gameOption + 1;
-        gameOption = showGameOption(gameOption);
+      if(gameMode < MODES_SIZE -1){
+        gameMode = gameMode + 1;
+        gameMode = showGameMode(gameMode);
       };
       break;
     case 'C':
-      gameOptionSelected = gameOption;
-      option_selected = true;
+      mode_setted = true;
       break;
     default:
       break;
@@ -139,15 +148,141 @@ void setup() {
   };
 
   lcd.clear();
-  lcd.home();
-  lcd.print(gameOptions[gameOption]);
+  lcd.setCursor(1,0); 
+  lcd.print("Mode selected");
+  delay(750);
+  lcd.setCursor(2,1);
+  lcd.print(gameModes[gameMode]);
+  delay(1500);
+  lcd.clear();
 
-  switch (gameOption) {
+  switch (gameMode) {
+  case 0:
+    //Timer Configuration
+    lcd.setCursor(0,0);
+    lcd.print("Timer Set Up");
+    clearRow(1);
+    lcd.setCursor(0,1);
+    lcd.print("__:__:__"); // 0 1 3 4 6 7
+    while(!timer_setted){
+      key = myKeypad.getKey();
+      while (key == NO_KEY) key = myKeypad.getKey();
+      switch (key) {
+        case 'D':
+          switch(timerPosition){
+            case 0://HT
+              break;
+            case 1://HU
+              lcd.setCursor(0,1);
+              hourTen = '_';
+              lcd.print(hourTen);
+              timerPosition = 0;
+              break;
+            case 2://MT
+              lcd.setCursor(1,1);
+              hourUni = '_';
+              lcd.print(hourUni);
+              timerPosition = 1;
+              break;
+            case 3://MU
+              lcd.setCursor(3,1);
+              minTen = '_';
+              lcd.print(minTen);
+              timerPosition = 2;
+              break;
+            case 4://ST
+              lcd.setCursor(4,1);
+              minUni = '_';
+              lcd.print(minUni);
+              timerPosition = 3;
+              break;
+            case 5://SU
+              lcd.setCursor(6,1);
+              secTen = '_';
+              lcd.print(secTen);
+              timerPosition = 4;
+              break;
+            case 6://COMPLETED
+              lcd.setCursor(7,1);
+              secUni = '_';
+              lcd.print(secUni);
+              timerPosition = 5;
+              break;
+          };
+          break;
+        case 'C':
+          if (timerPosition == 6) timer_setted = true;
+          break;
+        default:
+          if(isDigit(key)){
+            switch (timerPosition) {
+              case 0:
+                lcd.setCursor(0,1);
+                hourTen = key;
+                lcd.print(hourTen);
+                timerPosition = timerPosition + 1;
+                break;
+              case 1:
+                lcd.setCursor(1,1);
+                hourUni = key;
+                lcd.print(hourUni);
+                timerPosition = timerPosition + 1;
+                break;
+              case 2:
+                lcd.setCursor(3,1);
+                minTen = key;
+                lcd.print(minTen);
+                timerPosition = timerPosition + 1;
+                break;
+              case 3:
+                lcd.setCursor(4,1);
+                minUni = key;
+                lcd.print(minUni);
+                timerPosition = timerPosition + 1;
+                break;
+              case 4:
+                lcd.setCursor(6,1);
+                secTen = key;
+                lcd.print(secTen);
+                timerPosition = timerPosition + 1;
+                break;
+              case 5:
+                lcd.setCursor(7,1);
+                secUni = key;
+                lcd.print(secUni);
+                timerPosition = timerPosition + 1;
+                break;
+              default:
+                break;
+            };
+          }
+          break;
+        };
+    }
+
+
+    lcd.clear();
+    lcd.setCursor(1,0); 
+    lcd.print("Timer selected");
+    delay(750);
+    lcd.setCursor(4,1);
+    lcd.print(hourTen);
+    lcd.print(hourUni);
+    lcd.print(":");
+    lcd.print(minTen);
+    lcd.print(minUni);
+    lcd.print(":");
+    lcd.print(secTen);
+    lcd.print(secUni);
+    delay(1500);
+    lcd.clear();
+
+    //Defuse Code Configuration
+    
+    break;
   case 1:
     break;
   case 2:
-    break;
-  case 3:
     break;
   };
 }
@@ -159,7 +294,7 @@ void showWelcomeMessage(){
   lcd.home ();
   lcd.setCursor ( 2, 0);
   lcd.print("PropBOMB Game");
-  lcd.setCursor ( 3, 1 );
+  lcd.setCursor ( 5, 1 );
   lcd.print("By Edu");
   delay (1500);
   for ( int i = 0; i < 15; i++ ) {
@@ -168,15 +303,15 @@ void showWelcomeMessage(){
   }
 }
 
-byte showGameOption(int optionIndex){
+byte showGameMode(int modeIndex){
   clearRow(1);
   lcd.setCursor ( 0, 1 );
   lcd.write((byte)4); // right arrow
-  lcd.print(gameOptions[optionIndex]); // game option
+  lcd.print(gameModes[modeIndex]); // game option
   lcd.setCursor ( 14, 1 );
   lcd.write((byte)1); // up arrow
   lcd.write((byte)2); // down arrow
-  return optionIndex;
+  return modeIndex;
 }
 
 void clearRow(int rowNumber){
