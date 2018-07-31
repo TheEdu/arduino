@@ -82,24 +82,31 @@ byte empty[8] = {
 };
 //End LCD-i2c definition
 
-//Begin Game Configuration
+//Begin Game Mode definition
 #define MODES_SIZE 3
 byte gameMode = 0;
 bool mode_setted = false;
-String gameModes[MODES_SIZE]={"Defuse Code", "Defuse Wire", "Defuse Extra"};
-//End Game Configuration
+String gameModes[MODES_SIZE]={"Defuse Code", "Defuse Wire", "Defuse Remote"};
+//End Game Mode definition
 
 //Begin Temporizer definition
-#define TIMER_SIZE 3
+#define TIMER_SIZE 6
 byte timerPosition = 0;
 bool timer_setted = false;
-char hourTen= '_';
-char hourUni= '_';
-char minTen = '_';
-char minUni = '_';
-char secTen = '_';
-char secUni = '_';
+char hourTen;
+char hourUni;
+char minTen;
+char minUni;
+char secTen;
+char secUni;
 //End Temporizer definition
+
+//Begin Defuse Code definition
+#define DEFUSE_CODE_SIZE 4
+byte defuseCodePosition = 0;
+bool defuseCode_setted = false;
+String defuseCode = "";
+//End Defuse Code definition
 
 void setup() {
   //Initialize LCD
@@ -211,7 +218,7 @@ void setup() {
           };
           break;
         case 'C':
-          if (timerPosition == 6) timer_setted = true;
+          if (timerPosition == TIMER_SIZE) timer_setted = true;
           break;
         default:
           if(isDigit(key)){
@@ -278,13 +285,99 @@ void setup() {
     lcd.clear();
 
     //Defuse Code Configuration
-    
+    lcd.setCursor(0,0);
+    lcd.print("Code Set Up");
+    clearRow(1);
+    lcd.setCursor(0,1);
+    lcd.print("____");
+
+    while(!defuseCode_setted){
+      key = myKeypad.getKey();
+      while (key == NO_KEY) key = myKeypad.getKey();
+      switch(key){
+        case 'D':
+          switch(defuseCodePosition){
+            case 0:
+              break;
+            case 1:
+              lcd.setCursor(0,1);
+              lcd.print('_');
+              defuseCodePosition = defuseCodePosition - 1;
+              defuseCode = defuseCode.substring(0,defuseCodePosition);
+              break;
+            case 2:
+              lcd.setCursor(1,1);
+              lcd.print('_');
+              defuseCodePosition = defuseCodePosition - 1;
+              defuseCode = defuseCode.substring(0,defuseCodePosition);
+              break;
+            case 3:
+              lcd.setCursor(2,1);
+              lcd.print('_');
+              defuseCodePosition = defuseCodePosition - 1;
+              defuseCode = defuseCode.substring(0,defuseCodePosition);
+              break;
+            case 4:
+              lcd.setCursor(3,1);
+              lcd.print('_');
+              defuseCodePosition = defuseCodePosition - 1;
+              defuseCode = defuseCode.substring(0,defuseCodePosition);
+              break;
+          }
+          break;
+        case 'C':
+          if (defuseCodePosition == DEFUSE_CODE_SIZE) defuseCode_setted = true;
+          break;
+        default:
+          if(isDigit(key) && defuseCodePosition < DEFUSE_CODE_SIZE){
+            defuseCodePosition = defuseCodePosition + 1;
+            defuseCode = defuseCode + key;
+            lcd.setCursor(defuseCodePosition-1,1);
+            lcd.print(key);
+          }
+          break;
+      }
+    }
+
+    lcd.clear();
+    lcd.setCursor(1,0); 
+    lcd.print("Code selected");
+    delay(750);
+    lcd.setCursor(6,1);
+    lcd.print(defuseCode);
+    delay(1500);
+    lcd.clear();
     break;
   case 1:
+    // Falta Juego 1 (Wire)
     break;
   case 2:
+    // Falta Juego 2 (Remote)
     break;
   };
+
+  lcd.clear();
+  lcd.setCursor(3,0);
+  lcd.print("Bomb armed");
+  delay(750);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Game Start In");
+  lcd.setCursor(15,0);
+  lcd.print("3");
+  delay(1250);
+  lcd.setCursor(15,0);
+  lcd.print("2");
+  delay(1250);
+  lcd.setCursor(15,0);
+  lcd.print("1");
+  delay(1250);
+  
+  lcd.clear();
+  lcd.setCursor(6,0);
+  lcd.print("GO!");
+  delay(1250);
+  lcd.clear();
 }
 
 void loop() {
