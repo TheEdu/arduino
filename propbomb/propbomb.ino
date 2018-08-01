@@ -80,6 +80,17 @@ byte empty[8] = {
   0b00000000,
   0b00000000,
 };
+
+byte ok[8] = {
+  0b00000011,
+  0b00000011,
+  0b00000011,
+  0b00001111,
+  0b00011111,
+  0b00011111,
+  0b00011111,
+  0b00001111,
+};
 //End LCD-i2c definition
 
 //Begin Game Mode definition
@@ -108,6 +119,13 @@ bool defuseCode_setted = false;
 String defuseCode = "";
 //End Defuse Code definition
 
+//Begin Game Variables
+bool gameActive = true;
+byte inputCodePosition = 0;
+String inputCode = "";
+byte asserts = 0;
+//End Game Variables
+
 void setup() {
   //Initialize LCD
   lcd.begin(16, 2);
@@ -118,6 +136,7 @@ void setup() {
   lcd.createChar (4, arrowr);
   lcd.createChar (5, enter);
   lcd.createChar (6, empty);
+  lcd.createChar (7, ok);
 
   //Game WELCOME
   showWelcomeMessage();
@@ -347,6 +366,47 @@ void setup() {
     lcd.print(defuseCode);
     delay(1500);
     lcd.clear();
+
+    //Reset defuseCodePosition
+    defuseCodePosition = 0;
+
+    lcd.clear();
+    lcd.setCursor(3,0);
+    lcd.print("Bomb armed");
+    delay(750);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Game Start In");
+    lcd.setCursor(15,0);
+    lcd.print("3");
+    delay(1250);
+    lcd.setCursor(15,0);
+    lcd.print("2");
+    delay(1250);
+    lcd.setCursor(15,0);
+    lcd.print("1");
+    delay(1250);
+    
+    lcd.clear();
+    lcd.setCursor(6,0);
+    lcd.print("GO!");
+    delay(1250);
+    lcd.clear();
+  
+    lcd.home();
+    lcd.setCursor(4,0);
+    lcd.print(hourTen);
+    lcd.print(hourUni);
+    lcd.print(":");
+    lcd.print(minTen);
+    lcd.print(minUni);
+    lcd.print(":");
+    lcd.print(secTen);
+    lcd.print(secUni);
+  
+    lcd.setCursor(6,1);
+    lcd.print("____");
+    
     break;
   case 1:
     // Falta Juego 1 (Wire)
@@ -355,32 +415,89 @@ void setup() {
     // Falta Juego 2 (Remote)
     break;
   };
-
-  lcd.clear();
-  lcd.setCursor(3,0);
-  lcd.print("Bomb armed");
-  delay(750);
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Game Start In");
-  lcd.setCursor(15,0);
-  lcd.print("3");
-  delay(1250);
-  lcd.setCursor(15,0);
-  lcd.print("2");
-  delay(1250);
-  lcd.setCursor(15,0);
-  lcd.print("1");
-  delay(1250);
-  
-  lcd.clear();
-  lcd.setCursor(6,0);
-  lcd.print("GO!");
-  delay(1250);
-  lcd.clear();
 }
 
 void loop() {
+  key = myKeypad.getKey();
+  if(key != NO_KEY && gameActive){
+    switch(gameMode){
+      case 0:
+        switch(key){
+          case 'D':
+            switch(inputCodePosition){
+              case 0:
+                break;
+              case 1:
+                lcd.setCursor(6,1);
+                lcd.print('_');
+                inputCodePosition = inputCodePosition - 1;
+                inputCode = inputCode.substring(0,inputCodePosition);
+                break;
+              case 2:
+                lcd.setCursor(7,1);
+                lcd.print('_');
+                inputCodePosition = inputCodePosition - 1;
+                inputCode = inputCode.substring(0,inputCodePosition);
+                break;
+              case 3:
+                lcd.setCursor(8,1);
+                lcd.print('_');
+                inputCodePosition = inputCodePosition - 1;
+                inputCode = inputCode.substring(0,inputCodePosition);
+                break;
+              case 4:
+                lcd.setCursor(9,1);
+                lcd.print('_');
+                inputCodePosition = inputCodePosition - 1;
+                inputCode = inputCode.substring(0,inputCodePosition);
+                break;
+            }
+            break;
+          case 'C':
+            if (inputCodePosition == DEFUSE_CODE_SIZE) {
+              if (inputCode.equals(defuseCode)){
+                gameActive = false;
+                lcd.clear();
+                lcd.setCursor(2,0);
+                lcd.print("Bomb has been");
+                lcd.setCursor(4,1);
+                lcd.print("Defused");
+              } else {
+                asserts = 0;
+                for (int i=0; i < DEFUSE_CODE_SIZE; i++){
+                  if(inputCode[i] == defuseCode[i]){
+                    asserts = asserts + 1;
+                  }
+                }
+                inputCode = "";
+                inputCodePosition = 0;
+                lcd.setCursor(6,1);
+                lcd.print("____");
+                delay(250);
+                clearRow(1);
+                delay(250);
+                lcd.setCursor(6,1);
+                lcd.print("____");
+                lcd.setCursor(12,1);    
+                lcd.print(asserts);
+                lcd.print(" OK");
+              };
+            };
+            break;
+          default:
+            if(isDigit(key) && inputCodePosition < DEFUSE_CODE_SIZE){
+              inputCodePosition = inputCodePosition + 1;
+              inputCode = inputCode + key;
+              lcd.setCursor(inputCodePosition+5,1);
+              lcd.print(key);
+            }
+            break;
+        }
+        break;
+      default:
+        break;
+    } 
+  }
 }
 
 void showWelcomeMessage(){
