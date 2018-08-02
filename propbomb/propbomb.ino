@@ -1,6 +1,7 @@
 #include <Keypad.h>
 #include <Wire.h>
 #include  <LiquidCrystal_I2C.h>
+#include <TimerOne.h>
 
 //Begin Keypad definition
 const byte numRows= 4;
@@ -81,15 +82,15 @@ byte empty[8] = {
   0b00000000,
 };
 
-byte ok[8] = {
-  0b00000011,
-  0b00000011,
-  0b00000011,
-  0b00001111,
+byte bomb[8] = {
+  0b00000010,
+  0b00000100,
+  0b00000100,
+  0b00001110,
   0b00011111,
   0b00011111,
   0b00011111,
-  0b00001111,
+  0b00001110,
 };
 //End LCD-i2c definition
 
@@ -104,6 +105,9 @@ String gameModes[MODES_SIZE]={"Defuse Code", "Defuse Wire", "Defuse Remote"};
 #define TIMER_SIZE 6
 byte timerPosition = 0;
 bool timer_setted = false;
+byte timerChange;
+byte timeOver = 0;
+long timeDelay = 1000000; // 1 second
 char hourTen;
 char hourUni;
 char minTen;
@@ -127,6 +131,7 @@ byte asserts = 0;
 //End Game Variables
 
 void setup() {
+  Serial.begin(9600);
   //Initialize LCD
   lcd.begin(16, 2);
   //Initialize lcd special characters
@@ -136,7 +141,7 @@ void setup() {
   lcd.createChar (4, arrowr);
   lcd.createChar (5, enter);
   lcd.createChar (6, empty);
-  lcd.createChar (7, ok);
+  lcd.createChar (7, bomb);
 
   //Game WELCOME
   showWelcomeMessage();
@@ -291,15 +296,7 @@ void setup() {
     lcd.setCursor(1,0); 
     lcd.print("Timer selected");
     delay(750);
-    lcd.setCursor(4,1);
-    lcd.print(hourTen);
-    lcd.print(hourUni);
-    lcd.print(":");
-    lcd.print(minTen);
-    lcd.print(minUni);
-    lcd.print(":");
-    lcd.print(secTen);
-    lcd.print(secUni);
+    showTimer(4,1);
     delay(1500);
     lcd.clear();
 
@@ -393,19 +390,12 @@ void setup() {
     delay(1250);
     lcd.clear();
   
-    lcd.home();
-    lcd.setCursor(4,0);
-    lcd.print(hourTen);
-    lcd.print(hourUni);
-    lcd.print(":");
-    lcd.print(minTen);
-    lcd.print(minUni);
-    lcd.print(":");
-    lcd.print(secTen);
-    lcd.print(secUni);
-  
+    showTimer(4,0);
     lcd.setCursor(6,1);
     lcd.print("____");
+
+    Timer1.initialize(timeDelay);
+    Timer1.attachInterrupt(minusSecond);
     
     break;
   case 1:
@@ -418,92 +408,116 @@ void setup() {
 }
 
 void loop() {
-  key = myKeypad.getKey();
-  if(key != NO_KEY && gameActive){
+  
+  if(gameActive){
     switch(gameMode){
       case 0:
-        switch(key){
-          case 'D':
-            switch(inputCodePosition){
-              case 0:
-                break;
-              case 1:
-                lcd.setCursor(6,1);
-                lcd.print('_');
-                inputCodePosition = inputCodePosition - 1;
-                inputCode = inputCode.substring(0,inputCodePosition);
-                break;
-              case 2:
-                lcd.setCursor(7,1);
-                lcd.print('_');
-                inputCodePosition = inputCodePosition - 1;
-                inputCode = inputCode.substring(0,inputCodePosition);
-                break;
-              case 3:
-                lcd.setCursor(8,1);
-                lcd.print('_');
-                inputCodePosition = inputCodePosition - 1;
-                inputCode = inputCode.substring(0,inputCodePosition);
-                break;
-              case 4:
-                lcd.setCursor(9,1);
-                lcd.print('_');
-                inputCodePosition = inputCodePosition - 1;
-                inputCode = inputCode.substring(0,inputCodePosition);
-                break;
-            }
-            break;
-          case 'C':
-            if (inputCodePosition == DEFUSE_CODE_SIZE) {
-              if (inputCode.equals(defuseCode)){
-                gameActive = false;
-                lcd.clear();
-                lcd.setCursor(2,0);
-                lcd.print("Bomb has been");
-                lcd.setCursor(4,1);
-                lcd.print("Defused");
-              } else {
-                asserts = 0;
-                for (int i=0; i < DEFUSE_CODE_SIZE; i++){
-                  if(inputCode[i] == defuseCode[i]){
-                    asserts = asserts + 1;
+        if(timerChange == 1){
+          showTimer(4,0);
+          timerChange = 0;
+        }
+        
+        if(timeOver == 1){
+          Timer1.detachInterrupt();
+          gameActive = false;
+          lcd.clear();
+          lcd.setCursor(2,0);
+          lcd.print("The Bomb has");
+          lcd.setCursor(4,1);
+          lcd.print("Exploded");
+        }
+        
+        key = myKeypad.getKey();
+        if(key != NO_KEY && gameActive){
+          switch(key){
+            case 'D':
+              switch(inputCodePosition){
+                case 0:
+                  break;
+                case 1:
+                  lcd.setCursor(6,1);
+                  lcd.print('_');
+                  inputCodePosition = inputCodePosition - 1;
+                  inputCode = inputCode.substring(0,inputCodePosition);
+                  break;
+                case 2:
+                  lcd.setCursor(7,1);
+                  lcd.print('_');
+                  inputCodePosition = inputCodePosition - 1;
+                  inputCode = inputCode.substring(0,inputCodePosition);
+                  break;
+                case 3:
+                  lcd.setCursor(8,1);
+                  lcd.print('_');
+                  inputCodePosition = inputCodePosition - 1;
+                  inputCode = inputCode.substring(0,inputCodePosition);
+                  break;
+                case 4:
+                  lcd.setCursor(9,1);
+                  lcd.print('_');
+                  inputCodePosition = inputCodePosition - 1;
+                  inputCode = inputCode.substring(0,inputCodePosition);
+                  break;
+              }
+              break;
+            case 'C':
+              if (inputCodePosition == DEFUSE_CODE_SIZE) {
+                if (inputCode.equals(defuseCode)){
+                  gameActive = false;
+                  Timer1.detachInterrupt();
+                  lcd.clear();
+                  lcd.setCursor(2,0);
+                  lcd.print("Bomb has been");
+                  lcd.setCursor(4,1);
+                  lcd.print("Defused");
+                } else {
+                  timeDelay = timeDelay - timeDelay*20/100;
+                  Timer1.setPeriod(timeDelay);
+                  asserts = 0;
+                  for (int i=0; i < DEFUSE_CODE_SIZE; i++){
+                    if(inputCode[i] == defuseCode[i]){
+                      asserts = asserts + 1;
+                    }
                   }
-                }
-                inputCode = "";
-                inputCodePosition = 0;
-                lcd.setCursor(6,1);
-                lcd.print("____");
-                delay(250);
-                clearRow(1);
-                delay(250);
-                lcd.setCursor(6,1);
-                lcd.print("____");
-                lcd.setCursor(12,1);    
-                lcd.print(asserts);
-                lcd.print(" OK");
+                  inputCode = "";
+                  inputCodePosition = 0;
+                  lcd.setCursor(6,1);
+                  lcd.print("____");
+                  delay(250);
+                  clearRow(1);
+                  delay(250);
+                  lcd.setCursor(6,1);
+                  lcd.print("____");
+                  lcd.setCursor(12,1);    
+                  lcd.print(asserts);
+                  lcd.print(" OK");
+                };
               };
-            };
-            break;
-          default:
-            if(isDigit(key) && inputCodePosition < DEFUSE_CODE_SIZE){
-              inputCodePosition = inputCodePosition + 1;
-              inputCode = inputCode + key;
-              lcd.setCursor(inputCodePosition+5,1);
-              lcd.print(key);
-            }
-            break;
+              break;
+            default:
+              if(isDigit(key) && inputCodePosition < DEFUSE_CODE_SIZE){
+                inputCodePosition = inputCodePosition + 1;
+                inputCode = inputCode + key;
+                lcd.setCursor(inputCodePosition+5,1);
+                lcd.print(key);
+              }
+              break;
+          }
         }
         break;
       default:
         break;
-    } 
+    }
   }
 }
 
 void showWelcomeMessage(){
   lcd.home ();
   lcd.setCursor ( 2, 0);
-  lcd.print("PropBOMB Game");
+  lcd.print("Bomb Game ");
+  lcd.write((byte)7);
+  lcd.write((byte)7);
+  lcd.write((byte)7);
   lcd.setCursor ( 5, 1 );
   lcd.print("By Edu");
   delay (1500);
@@ -519,8 +533,10 @@ byte showGameMode(int modeIndex){
   lcd.write((byte)4); // right arrow
   lcd.print(gameModes[modeIndex]); // game option
   lcd.setCursor ( 14, 1 );
+  /*
   lcd.write((byte)1); // up arrow
   lcd.write((byte)2); // down arrow
+  */
   return modeIndex;
 }
 
@@ -530,3 +546,65 @@ void clearRow(int rowNumber){
     lcd.write((byte)6);
   }
 }
+
+
+void showTimer(byte x,byte y){
+    lcd.setCursor(x,y);
+    lcd.print(hourTen);
+    lcd.print(hourUni);
+    lcd.print(":");
+    lcd.print(minTen);
+    lcd.print(minUni);
+    lcd.print(":");
+    lcd.print(secTen);
+    lcd.print(secUni);
+}
+
+
+void minusSecond(){
+  asm (
+  "INICIO:            \n"
+  "cpi %1,'0'         \n"
+  "brne SUM1          \n"
+  "cpi %2,'0'         \n"
+  "brne STM1          \n"
+  "cpi %3,'0'         \n"
+  "brne MUM1          \n"
+  "cpi %4,'0'         \n"
+  "brne MTM1          \n"
+  "cpi %5,'0'         \n"
+  "brne HUM1          \n"
+  "cpi %6,'0'         \n"
+  "brne HTM1          \n"
+  "ldi %0,1           \n"
+  "rjmp END           \n"
+  "SUM1:              \n"
+    "DEC %1           \n"
+    "RJMP END         \n"
+  "STM1:              \n"
+    "DEC %2           \n"
+    "SUR: ldi %1, '9' \n"
+    "RJMP END         \n"
+  "MUM1:              \n"
+    "DEC %3           \n"
+    "STR: ldi %2, '5' \n"
+    "RJMP SUR         \n"
+  "MTM1:              \n"
+    "DEC %4           \n"
+    "MUR: ldi %3, '9' \n"
+    "RJMP STR         \n"
+  "HUM1:              \n"
+    "DEC %5           \n"
+    "MTR: ldi %4, '5' \n"
+    "RJMP MUR         \n"
+  "HTM1:              \n"
+    "DEC %6           \n"
+    "ldi %5, '9'      \n"
+    "RJMP MTR         \n"
+  "END:               \n"
+  : "+r" (timeOver), "+r" (secUni), "+r" (secTen), "+r" (minUni), "+r" (minTen), "+r" (hourUni), "+r" (hourTen));
+
+  timerChange = 1;
+}
+
+

@@ -1,6 +1,7 @@
 
+#include <TimerOne.h>
+
 byte timeOver = 0;
-byte result  = 1;
 char hourTen = '1';
 char hourUni = '0';
 char minTen  = '0';
@@ -12,6 +13,9 @@ char secUni  = '2';
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+
+  Timer1.initialize(1000000);
+  Timer1.attachInterrupt(plusSecond);
   
   Serial.print(hourTen);
   Serial.print(hourUni);
@@ -26,9 +30,12 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-   
-    asm (
+  // put your main code here, to run repeatedly: 
+
+}
+
+void plusSecond(){
+  asm (
   "INICIO: \n"
   "cpi %1,'0' \n"
   "brne SUM1  \n"
@@ -68,10 +75,7 @@ void loop() {
     "ldi %5, '9'      \n"
     "RJMP MTR         \n"
   "END:               \n"
-  : "+r" (result) , "+r" (secUni)  , "+r" (secTen), "+r" (minUni)  , "+r" (minTen), "+r" (hourUni)  , "+r" (hourTen));
-
-  delay(10);
-
+  : "+r" (timeOver) , "+r" (secUni)  , "+r" (secTen), "+r" (minUni)  , "+r" (minTen), "+r" (hourUni)  , "+r" (hourTen));
   
   Serial.print(hourTen);
   Serial.print(hourUni);
@@ -81,6 +85,4 @@ void loop() {
   Serial.print(":");
   Serial.print(secTen);
   Serial.println(secUni);
-
-
 }
