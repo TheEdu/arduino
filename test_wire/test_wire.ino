@@ -8,7 +8,9 @@ void setup() {
 
 void loop() {
   Serial.print("pin10: ");
-  Serial.println(digitalRead(10));
+  if(digitalRead(10) == 1){
+    Serial.println("Hola Mundo!");
+  }
   Serial.print("pin11: ");
   Serial.println(digitalRead(11));
   Serial.print("pin12: ");

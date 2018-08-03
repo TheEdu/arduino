@@ -130,6 +130,9 @@ byte wireOrderPosition = 0;
 bool wireOrder_setted = false;
 char wireOrder[WIRE_ORDER_SIZE];
 char lastInput;
+int wire1;
+int wire2;
+int wire3;
 //End Wire Order definition
 
 //Begin Game Variables
@@ -140,7 +143,6 @@ byte asserts = 0;
 //End Game Variables
 
 void setup() {
-  Serial.begin(9600);
   //Initialize LCD
   lcd.begin(16, 2);
   //Initialize lcd special characters
@@ -336,6 +338,40 @@ void loop() {
         }
         break;
       case 1:
+        if(timerChange == 1){
+          showTimer(4,0);
+          timerChange = 0;
+        }
+        
+        if(timeOver == 1){
+          Timer1.detachInterrupt();
+          gameActive = false;
+          lcd.clear();
+          lcd.setCursor(2,0);
+          lcd.print("The Bomb has");
+          lcd.setCursor(4,1);
+          lcd.print("Exploded");
+        }
+
+        if(((digitalRead(wire3)==0) && ((digitalRead(wire1)==1) || (digitalRead(wire2)==1))) || ((digitalRead(wire2)==0) && (digitalRead(wire1)==1))){
+          Timer1.detachInterrupt();
+          gameActive = false;
+          lcd.clear();
+          lcd.setCursor(2,0);
+          lcd.print("The Bomb has");
+          lcd.setCursor(4,1);
+          lcd.print("Exploded");
+        }
+
+        if((digitalRead(wire1)==0) && (digitalRead(wire2)==0) && (digitalRead(wire3)==0)){
+          gameActive = false;
+          Timer1.detachInterrupt();
+          lcd.clear();
+          lcd.setCursor(2,0);
+          lcd.print("Bomb has been");
+          lcd.setCursor(4,1);
+          lcd.print("Defused");
+        }
         
         break;
       case 2:
@@ -588,6 +624,12 @@ void wireSetUp(){
     }
   }
 
+  wire1 = setWire(wireOrder[0]);
+  
+  wire2 = setWire(wireOrder[1]);
+  
+  wire3 = setWire(wireOrder[2]);
+
   lcd.clear();
   lcd.setCursor(3,0); 
   lcd.print("Wire Order");
@@ -718,6 +760,22 @@ void resetX(char input){
         lcd.print('3');
         break;
     }
+}
+
+int setWire(char wirePosition){
+  int pin;
+  switch(wirePosition){
+    case '1':
+      pin = 10;
+      break;
+    case '2':
+      pin = 11;
+      break;
+    case '3':
+      pin = 12;
+      break;
+  }
+  return pin;
 }
 
 void minusSecond(){
