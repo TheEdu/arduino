@@ -1,7 +1,8 @@
 #include <Keypad.h>
 #include <Wire.h>
-#include  <LiquidCrystal_I2C.h>
+#include <LiquidCrystal_I2C.h>
 #include <TimerOne.h>
+#include <pitches.h>
 
 //Begin Keypad definition
 const byte numRows= 4;
@@ -123,6 +124,14 @@ bool defuseCode_setted = false;
 String defuseCode = "";
 //End Defuse Code definition
 
+//Begin Wire Order definition
+#define WIRE_ORDER_SIZE 3
+byte wireOrderPosition = 0;
+bool wireOrder_setted = false;
+char wireOrder[WIRE_ORDER_SIZE];
+char lastInput;
+//End Wire Order definition
+
 //Begin Game Variables
 bool gameActive = true;
 byte inputCodePosition = 0;
@@ -189,206 +198,9 @@ void setup() {
 
   switch (gameMode) {
   case 0:
-    //Timer Configuration
-    lcd.setCursor(0,0);
-    lcd.print("Timer Set Up");
-    clearRow(1);
-    lcd.setCursor(0,1);
-    lcd.print("__:__:__"); // 0 1 3 4 6 7
-    while(!timer_setted){
-      key = myKeypad.getKey();
-      while (key == NO_KEY) key = myKeypad.getKey();
-      switch (key) {
-        case 'D':
-          switch(timerPosition){
-            case 0://HT
-              break;
-            case 1://HU
-              lcd.setCursor(0,1);
-              hourTen = '_';
-              lcd.print(hourTen);
-              timerPosition = 0;
-              break;
-            case 2://MT
-              lcd.setCursor(1,1);
-              hourUni = '_';
-              lcd.print(hourUni);
-              timerPosition = 1;
-              break;
-            case 3://MU
-              lcd.setCursor(3,1);
-              minTen = '_';
-              lcd.print(minTen);
-              timerPosition = 2;
-              break;
-            case 4://ST
-              lcd.setCursor(4,1);
-              minUni = '_';
-              lcd.print(minUni);
-              timerPosition = 3;
-              break;
-            case 5://SU
-              lcd.setCursor(6,1);
-              secTen = '_';
-              lcd.print(secTen);
-              timerPosition = 4;
-              break;
-            case 6://COMPLETED
-              lcd.setCursor(7,1);
-              secUni = '_';
-              lcd.print(secUni);
-              timerPosition = 5;
-              break;
-          };
-          break;
-        case 'C':
-          if (timerPosition == TIMER_SIZE) timer_setted = true;
-          break;
-        default:
-          if(isDigit(key)){
-            switch (timerPosition) {
-              case 0:
-                lcd.setCursor(0,1);
-                hourTen = key;
-                lcd.print(hourTen);
-                timerPosition = timerPosition + 1;
-                break;
-              case 1:
-                lcd.setCursor(1,1);
-                hourUni = key;
-                lcd.print(hourUni);
-                timerPosition = timerPosition + 1;
-                break;
-              case 2:
-                lcd.setCursor(3,1);
-                minTen = key;
-                lcd.print(minTen);
-                timerPosition = timerPosition + 1;
-                break;
-              case 3:
-                lcd.setCursor(4,1);
-                minUni = key;
-                lcd.print(minUni);
-                timerPosition = timerPosition + 1;
-                break;
-              case 4:
-                lcd.setCursor(6,1);
-                secTen = key;
-                lcd.print(secTen);
-                timerPosition = timerPosition + 1;
-                break;
-              case 5:
-                lcd.setCursor(7,1);
-                secUni = key;
-                lcd.print(secUni);
-                timerPosition = timerPosition + 1;
-                break;
-              default:
-                break;
-            };
-          }
-          break;
-        };
-    }
-
-
-    lcd.clear();
-    lcd.setCursor(1,0); 
-    lcd.print("Timer selected");
-    delay(750);
-    showTimer(4,1);
-    delay(1500);
-    lcd.clear();
-
-    //Defuse Code Configuration
-    lcd.setCursor(0,0);
-    lcd.print("Code Set Up");
-    clearRow(1);
-    lcd.setCursor(0,1);
-    lcd.print("____");
-
-    while(!defuseCode_setted){
-      key = myKeypad.getKey();
-      while (key == NO_KEY) key = myKeypad.getKey();
-      switch(key){
-        case 'D':
-          switch(defuseCodePosition){
-            case 0:
-              break;
-            case 1:
-              lcd.setCursor(0,1);
-              lcd.print('_');
-              defuseCodePosition = defuseCodePosition - 1;
-              defuseCode = defuseCode.substring(0,defuseCodePosition);
-              break;
-            case 2:
-              lcd.setCursor(1,1);
-              lcd.print('_');
-              defuseCodePosition = defuseCodePosition - 1;
-              defuseCode = defuseCode.substring(0,defuseCodePosition);
-              break;
-            case 3:
-              lcd.setCursor(2,1);
-              lcd.print('_');
-              defuseCodePosition = defuseCodePosition - 1;
-              defuseCode = defuseCode.substring(0,defuseCodePosition);
-              break;
-            case 4:
-              lcd.setCursor(3,1);
-              lcd.print('_');
-              defuseCodePosition = defuseCodePosition - 1;
-              defuseCode = defuseCode.substring(0,defuseCodePosition);
-              break;
-          }
-          break;
-        case 'C':
-          if (defuseCodePosition == DEFUSE_CODE_SIZE) defuseCode_setted = true;
-          break;
-        default:
-          if(isDigit(key) && defuseCodePosition < DEFUSE_CODE_SIZE){
-            defuseCodePosition = defuseCodePosition + 1;
-            defuseCode = defuseCode + key;
-            lcd.setCursor(defuseCodePosition-1,1);
-            lcd.print(key);
-          }
-          break;
-      }
-    }
-
-    lcd.clear();
-    lcd.setCursor(1,0); 
-    lcd.print("Code selected");
-    delay(750);
-    lcd.setCursor(6,1);
-    lcd.print(defuseCode);
-    delay(1500);
-    lcd.clear();
-
-    //Reset defuseCodePosition
-    defuseCodePosition = 0;
-
-    lcd.clear();
-    lcd.setCursor(3,0);
-    lcd.print("Bomb armed");
-    delay(750);
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Game Start In");
-    lcd.setCursor(15,0);
-    lcd.print("3");
-    delay(1250);
-    lcd.setCursor(15,0);
-    lcd.print("2");
-    delay(1250);
-    lcd.setCursor(15,0);
-    lcd.print("1");
-    delay(1250);
-    
-    lcd.clear();
-    lcd.setCursor(6,0);
-    lcd.print("GO!");
-    delay(1250);
-    lcd.clear();
+    timerSetUp();           //  Timer Configuration
+    codeSetUp();            //  Defuse Code Configuration
+    showGameStartMessage(); //  Game Start Message
   
     showTimer(4,0);
     lcd.setCursor(6,1);
@@ -399,10 +211,28 @@ void setup() {
     
     break;
   case 1:
-    // Falta Juego 1 (Wire)
+    timerSetUp();           //Timer Configuration
+    wireSetUp();            // Wire Order Set Up
+    showGameStartMessage(); //  Game Start Message
+    
+    showTimer(4,0);
+    lcd.setCursor(2,1);
+    lcd.print("Wire Defuse");
+
+    Timer1.initialize(timeDelay);
+    Timer1.attachInterrupt(minusSecond);
     break;
   case 2:
-    // Falta Juego 2 (Remote)
+    timerSetUp(); //Timer Configuration
+    codeSetUp();  //Defuse Code Configuration
+    showGameStartMessage(); //  Game Start Message
+  
+    showTimer(4,0);
+    lcd.setCursor(2,1);
+    lcd.print("Remote Defuse");
+
+    Timer1.initialize(timeDelay);
+    Timer1.attachInterrupt(minusSecond);
     break;
   };
 }
@@ -505,6 +335,11 @@ void loop() {
           }
         }
         break;
+      case 1:
+        
+        break;
+      case 2:
+        break;
       default:
         break;
     }
@@ -560,10 +395,333 @@ void showTimer(byte x,byte y){
     lcd.print(secUni);
 }
 
+void timerSetUp(){
+  //Timer Configuration
+  lcd.setCursor(0,0);
+  lcd.print("Timer Set Up");
+  clearRow(1);
+  lcd.setCursor(0,1);
+  lcd.print("__:__:__"); // 0 1 3 4 6 7
+  while(!timer_setted){
+    key = myKeypad.getKey();
+    while (key == NO_KEY) key = myKeypad.getKey();
+    switch (key) {
+      case 'D':
+        switch(timerPosition){
+          case 0://HT
+            break;
+          case 1://HU
+            lcd.setCursor(0,1);
+            hourTen = '_';
+            lcd.print(hourTen);
+            timerPosition = 0;
+            break;
+          case 2://MT
+            lcd.setCursor(1,1);
+            hourUni = '_';
+            lcd.print(hourUni);
+            timerPosition = 1;
+            break;
+          case 3://MU
+            lcd.setCursor(3,1);
+            minTen = '_';
+            lcd.print(minTen);
+            timerPosition = 2;
+            break;
+          case 4://ST
+            lcd.setCursor(4,1);
+            minUni = '_';
+            lcd.print(minUni);
+            timerPosition = 3;
+            break;
+          case 5://SU
+            lcd.setCursor(6,1);
+            secTen = '_';
+            lcd.print(secTen);
+            timerPosition = 4;
+            break;
+          case 6://COMPLETED
+            lcd.setCursor(7,1);
+            secUni = '_';
+            lcd.print(secUni);
+            timerPosition = 5;
+            break;
+        };
+        break;
+      case 'C':
+        if (timerPosition == TIMER_SIZE) timer_setted = true;
+        break;
+      default:
+        if(isDigit(key)){
+          switch (timerPosition) {
+            case 0:
+              lcd.setCursor(0,1);
+              hourTen = key;
+              lcd.print(hourTen);
+              timerPosition = timerPosition + 1;
+              break;
+            case 1:
+              lcd.setCursor(1,1);
+              hourUni = key;
+              lcd.print(hourUni);
+              timerPosition = timerPosition + 1;
+              break;
+            case 2:
+              lcd.setCursor(3,1);
+              minTen = key;
+              lcd.print(minTen);
+              timerPosition = timerPosition + 1;
+              break;
+            case 3:
+              lcd.setCursor(4,1);
+              minUni = key;
+              lcd.print(minUni);
+              timerPosition = timerPosition + 1;
+              break;
+            case 4:
+              lcd.setCursor(6,1);
+              secTen = key;
+              lcd.print(secTen);
+              timerPosition = timerPosition + 1;
+              break;
+            case 5:
+              lcd.setCursor(7,1);
+              secUni = key;
+              lcd.print(secUni);
+              timerPosition = timerPosition + 1;
+              break;
+            default:
+              break;
+          };
+        }
+        break;
+      };
+  }
+
+
+  lcd.clear();
+  lcd.setCursor(1,0); 
+  lcd.print("Timer selected");
+  delay(750);
+  showTimer(4,1);
+  delay(1500);
+  lcd.clear();
+}
+
+void wireSetUp(){
+  lcd.setCursor(0,0);
+  lcd.print("Wire Set Up");
+  clearRow(1);
+  lcd.setCursor(0,1);
+  lcd.print("[1|2|3]: ___");
+
+  while(!wireOrder_setted){
+    key = myKeypad.getKey();
+    while (key == NO_KEY) key = myKeypad.getKey();
+
+    switch(key){
+      case 'D':
+        switch(wireOrderPosition){
+          case 1:
+            lcd.setCursor(9,1);
+            lcd.print('_');
+            wireOrderPosition = wireOrderPosition - 1;
+            lastInput = wireOrder[wireOrderPosition];
+            wireOrder[wireOrderPosition] = '0';
+            resetX(lastInput);
+            break;
+          case 2:
+            lcd.setCursor(10,1);
+            lcd.print('_');
+            wireOrderPosition = wireOrderPosition - 1;
+            lastInput = wireOrder[wireOrderPosition];
+            wireOrder[wireOrderPosition] = '0';
+            resetX(lastInput);
+            break;
+          case 3:
+            lcd.setCursor(11,1);
+            lcd.print('_');
+            wireOrderPosition = wireOrderPosition - 1;
+            lastInput = wireOrder[wireOrderPosition];
+            wireOrder[wireOrderPosition] = '0';
+            resetX(lastInput);
+            break;
+          default:
+            break;
+        }
+        break;
+      case 'C':
+        if (wireOrderPosition == WIRE_ORDER_SIZE) wireOrder_setted = true;
+        break;
+      case '1':
+        if((wireOrderPosition < WIRE_ORDER_SIZE) && notIn(key,wireOrder)){
+          lcd.setCursor(9+wireOrderPosition,1);
+          wireOrder[wireOrderPosition] = key;
+          wireOrderPosition = wireOrderPosition + 1;
+          lcd.print(key);
+          lcd.setCursor(1,1);
+          lcd.print('X');
+        }
+        break;
+      case '2':
+        if((wireOrderPosition < WIRE_ORDER_SIZE) &&  notIn(key,wireOrder)){
+          lcd.setCursor(9+wireOrderPosition,1);
+          wireOrder[wireOrderPosition] = key;
+          wireOrderPosition = wireOrderPosition + 1;
+          lcd.print(key);
+          lcd.setCursor(3,1);
+          lcd.print('X');
+        }
+        break;
+      case '3':
+        if((wireOrderPosition < WIRE_ORDER_SIZE) &&  notIn(key,wireOrder)){
+          lcd.setCursor(9+wireOrderPosition,1);
+          wireOrder[wireOrderPosition] = key;
+          wireOrderPosition = wireOrderPosition + 1;
+          lcd.print(key);
+          lcd.setCursor(5,1);
+          lcd.print('X');
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  lcd.clear();
+  lcd.setCursor(3,0); 
+  lcd.print("Wire Order");
+  delay(750);
+  lcd.setCursor(5,1);
+  lcd.print(wireOrder[0]);
+  lcd.print("-");
+  lcd.print(wireOrder[1]);
+  lcd.print("-");
+  lcd.print(wireOrder[2]);
+  delay(1500);
+  lcd.clear();
+
+}
+
+void codeSetUp(){
+  lcd.setCursor(0,0);
+  lcd.print("Code Set Up");
+  clearRow(1);
+  lcd.setCursor(0,1);
+  lcd.print("____");
+
+  while(!defuseCode_setted){
+    key = myKeypad.getKey();
+    while (key == NO_KEY) key = myKeypad.getKey();
+    switch(key){
+      case 'D':
+        switch(defuseCodePosition){
+          case 0:
+            break;
+          case 1:
+            lcd.setCursor(0,1);
+            lcd.print('_');
+            defuseCodePosition = defuseCodePosition - 1;
+            defuseCode = defuseCode.substring(0,defuseCodePosition);
+            break;
+          case 2:
+            lcd.setCursor(1,1);
+            lcd.print('_');
+            defuseCodePosition = defuseCodePosition - 1;
+            defuseCode = defuseCode.substring(0,defuseCodePosition);
+            break;
+          case 3:
+            lcd.setCursor(2,1);
+            lcd.print('_');
+            defuseCodePosition = defuseCodePosition - 1;
+            defuseCode = defuseCode.substring(0,defuseCodePosition);
+            break;
+          case 4:
+            lcd.setCursor(3,1);
+            lcd.print('_');
+            defuseCodePosition = defuseCodePosition - 1;
+            defuseCode = defuseCode.substring(0,defuseCodePosition);
+            break;
+        }
+        break;
+      case 'C':
+        if (defuseCodePosition == DEFUSE_CODE_SIZE) defuseCode_setted = true;
+        break;
+      default:
+        if(isDigit(key) && defuseCodePosition < DEFUSE_CODE_SIZE){
+          defuseCodePosition = defuseCodePosition + 1;
+          defuseCode = defuseCode + key;
+          lcd.setCursor(defuseCodePosition-1,1);
+          lcd.print(key);
+        }
+        break;
+    }
+  }
+
+  lcd.clear();
+  lcd.setCursor(1,0); 
+  lcd.print("Code selected");
+  delay(750);
+  lcd.setCursor(6,1);
+  lcd.print(defuseCode);
+  delay(1500);
+  lcd.clear();
+
+}
+
+
+void showGameStartMessage(){
+  lcd.clear();
+  lcd.setCursor(3,0);
+  lcd.print("Bomb armed");
+  delay(750);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Game Start In");
+  lcd.setCursor(15,0);
+  lcd.print("3");
+  delay(1250);
+  lcd.setCursor(15,0);
+  lcd.print("2");
+  delay(1250);
+  lcd.setCursor(15,0);
+  lcd.print("1");
+  delay(1250);
+  
+  lcd.clear();
+  lcd.setCursor(6,0);
+  lcd.print("GO!");
+  delay(1250);
+  lcd.clear();  
+}
+
+bool notIn(char elem, char vector[]){
+  bool flag = true;
+  for (int i = 0; i < sizeof(vector); i = i + 1) {
+    if (vector[i] == elem) flag = false;
+  }
+  return flag;
+}
+
+void resetX(char input){
+    switch (input){
+      case '1':
+        lcd.setCursor(1,1);
+        lcd.print('1');
+        break;
+      case '2':
+        lcd.setCursor(3,1);
+        lcd.print('2');
+        break;
+      case '3':
+        lcd.setCursor(5,1);
+        lcd.print('3');
+        break;
+    }
+}
 
 void minusSecond(){
   asm (
-  "INICIO:            \n"
   "cpi %1,'0'         \n"
   "brne SUM1          \n"
   "cpi %2,'0'         \n"
