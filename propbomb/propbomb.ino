@@ -14,6 +14,13 @@ Keypad myKeypad= Keypad(makeKeymap(keymap), rowPins, colPins, numRows, numCols);
 char key;
 //End Keypad definition
 
+//Begin Tone definition
+int melody[] = { NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4 };
+// note durations: 4 = quarter note, 8 = eighth note, etc.:
+int noteDurations[] = { 4, 8, 8, 4, 4, 4, 4, 4 };
+//End Tone definition
+
+
 //Begin LCD-i2c definition
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
@@ -302,6 +309,7 @@ void loop() {
                   lcd.print("Bomb has been");
                   lcd.setCursor(4,1);
                   lcd.print("Defused");
+                  winTone();
                 } else {
                   timeDelay = timeDelay - timeDelay*20/100;
                   Timer1.setPeriod(timeDelay);
@@ -351,6 +359,7 @@ void loop() {
           lcd.print("The Bomb has");
           lcd.setCursor(4,1);
           lcd.print("Exploded");
+          tone(13, NOTE_C4, 2500);
         }
 
         if(((digitalRead(wire3)==0) && ((digitalRead(wire1)==1) || (digitalRead(wire2)==1))) || ((digitalRead(wire2)==0) && (digitalRead(wire1)==1))){
@@ -361,6 +370,7 @@ void loop() {
           lcd.print("The Bomb has");
           lcd.setCursor(4,1);
           lcd.print("Exploded");
+          tone(13, NOTE_C4, 2500);
         }
 
         if((digitalRead(wire1)==0) && (digitalRead(wire2)==0) && (digitalRead(wire3)==0)){
@@ -371,6 +381,7 @@ void loop() {
           lcd.print("Bomb has been");
           lcd.setCursor(4,1);
           lcd.print("Defused");
+          winTone();
         }
         
         break;
@@ -778,6 +789,24 @@ int setWire(char wirePosition){
   return pin;
 }
 
+void winTone(){
+  // iterate over the notes of the melody:
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+
+    // to calculate the note duration, take one second divided by the note type.
+    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    int noteDuration = 1000 / noteDurations[thisNote];
+    tone(13, melody[thisNote], noteDuration);
+
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    // stop the tone playing:
+    noTone(13);
+  }
+}
+
 void minusSecond(){
   asm (
   "cpi %1,'0'         \n"
@@ -819,8 +848,9 @@ void minusSecond(){
     "RJMP MTR         \n"
   "END:               \n"
   : "+r" (timeOver), "+r" (secUni), "+r" (secTen), "+r" (minUni), "+r" (minTen), "+r" (hourUni), "+r" (hourTen));
-
+  
   timerChange = 1;
+  tone(13, NOTE_C4, 50);
 }
 
 
